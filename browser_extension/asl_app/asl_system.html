@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASL Animation System</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #03040f;
+        --s1: #07091a;
+        --s2: #0b0e22;
+        --s3: #10142e;
+        --accent: #00e5ff;
+        --accent2: #7c4dff;
+        --accent3: #ff4081;
+        --text: #dde6ff;
+        --text2: #6272a4;
+        --text3: #3d4f7c;
+        --border: #151a35;
+        --border2: #1e2540;
+        --glow: rgba(0, 229, 255, 0.15);
+        --font-mono: "Space Mono", monospace;
+        --font-ui: "Syne", sans-serif;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+      }
+
+      body {
+        font-family: var(--font-ui);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      /* ── HEADER ── */
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 20px;
+        background: var(--s1);
+        border-bottom: 1px solid var(--border2);
+        flex-shrink: 0;
+        z-index: 10;
+      }
+      .header-logo {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--accent);
+        background: rgba(0, 229, 255, 0.08);
+        border: 1px solid rgba(0, 229, 255, 0.25);
+        border-radius: 4px;
+        padding: 4px 10px;
+        letter-spacing: 2px;
+      }
+      .header-title {
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+      }
+      .header-sub {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text2);
+        margin-left: auto;
+        letter-spacing: 1px;
+      }
+      .header-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 8px var(--accent);
+        animation: pulse 2s ease infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+
+      /* ── LAYOUT ── */
+      .main {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+
+      /* ── CANVAS AREA ── */
+      .canvas-wrap {
+        flex: 1;
+        position: relative;
+        background: radial-gradient(
+          ellipse at 50% 60%,
+          #050a1f 0%,
+          #03040f 70%
+        );
+        overflow: hidden;
+      }
+      #canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      /* Grid overlay */
+      .canvas-wrap::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+        background-size: 48px 48px;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      /* Corner brackets */
+      .corner {
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        z-index: 2;
+      }
+      .corner-tl {
+        top: 16px;
+        left: 16px;
+        border-top: 2px solid var(--accent);
+        border-left: 2px solid var(--accent);
+      }
+      .corner-tr {
+        top: 16px;
+        right: 16px;
+        border-top: 2px solid var(--accent);
+        border-right: 2px solid var(--accent);
+      }
+      .corner-bl {
+        bottom: 16px;
+        left: 16px;
+        border-bottom: 2px solid var(--accent);
+        border-left: 2px solid var(--accent);
+      }
+      .corner-br {
+        bottom: 16px;
+        right: 16px;
+        border-bottom: 2px solid var(--accent);
+        border-right: 2px solid var(--accent);
+      }
+
+      /* HUD overlays */
+      .hud {
+        position: absolute;
+        z-index: 3;
+        pointer-events: none;
+      }
+      .hud-tl {
+        top: 28px;
+        left: 32px;
+      }
+      .hud-tr {
+        top: 28px;
+        right: 32px;
+        text-align: right;
+      }
+      .hud-bc {
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+      }
+
+      .hud-label {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        color: var(--text3);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+      .hud-value {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--accent);
+        letter-spacing: 1px;
+      }
+      .current-sign-display {
+        font-family: var(--font-mono);
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent);
+        text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+        letter-spacing: 6px;
+        min-width: 80px;
+        display: inline-block;
+      }
+      .sign-type-badge {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        padding: 2px 8px;
+        border: 1px solid rgba(124, 77, 255, 0.4);
+        color: var(--accent2);
+        border-radius: 2px;
+        letter-spacing: 1px;
+      }
+
+      /* Progress bar */
+      .progress-track {
+        width: 240px;
+        height: 2px;
+        background: var(--border2);
+        border-radius: 1px;
+        overflow: hidden;
+        margin-top: 8px;
+        pointer-events: none;
+      }
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent2), var(--accent));
+        border-radius: 1px;
+        transition: width 0.1s;
+        box-shadow: 0 0 6px var(--accent);
+      }
+
+      /* ── PANEL ── */
+      .panel {
+        width: 340px;
+        flex-shrink: 0;
+        background: var(--s1);
+        border-left: 1px solid var(--border2);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .p-section {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .p-label {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        color: var(--text3);
+        letter-spacing: 2px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .p-label::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border2);
+      }
+
+      textarea.eng-input {
+        width: 100%;
+        background: var(--s2);
+        border: 1px solid var(--border2);
+        border-radius: 4px;
+        padding: 10px 12px;
+        color: var(--text);
+        font-family: var(--font-ui);
+        font-size: 14px;
+        font-weight: 400;
+        resize: none;
+        min-height: 70px;
+        outline: none;
+        transition: border-color 0.2s;
+        line-height: 1.5;
+      }
+      textarea.eng-input:focus {
+        border-color: rgba(0, 229, 255, 0.4);
+      }
+      textarea.eng-input::placeholder {
+        color: var(--text3);
+      }
+
+      .asl-output {
+        margin-top: 8px;
+        padding: 8px 10px;
+        background: rgba(0, 229, 255, 0.04);
+        border: 1px solid rgba(0, 229, 255, 0.12);
+        border-radius: 4px;
+        min-height: 38px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: flex-start;
+        align-content: flex-start;
+      }
+
+      .token {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 7px;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 0.5px;
+        transition: all 0.15s;
+      }
+      .token-word {
+        background: rgba(124, 77, 255, 0.15);
+        color: #b39ddb;
+        border: 1px solid rgba(124, 77, 255, 0.3);
+      }
+      .token-word:hover {
+        background: rgba(124, 77, 255, 0.3);
+      }
+      .token-fs {
+        background: rgba(0, 229, 255, 0.1);
+        color: var(--accent);
+        border: 1px solid rgba(0, 229, 255, 0.25);
+      }
+      .token-fs:hover {
+        background: rgba(0, 229, 255, 0.2);
+      }
+      .token-active {
+        background: var(--accent) !important;
+        color: var(--bg) !important;
+        box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+      }
+
+      .btn-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .btn {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        padding: 8px 14px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-transform: uppercase;
+      }
+      .btn-sign {
+        flex: 1;
+        background: var(--accent);
+        color: var(--bg);
+      }
+      .btn-sign:hover {
+        background: #33eeff;
+        box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+      }
+      .btn-stop {
+        background: var(--s3);
+        color: var(--text2);
+        border: 1px solid var(--border2);
+      }
+      .btn-stop:hover {
+        color: var(--text);
+        border-color: var(--text3);
+      }
+      .btn-export {
+        background: var(--s3);
+        color: var(--accent2);
+        border: 1px solid rgba(124, 77, 255, 0.3);
+        padding: 8px 10px;
+      }
+      .btn-export:hover {
+        background: rgba(124, 77, 255, 0.15);
+      }
+
+      /* Speed control */
+      .speed-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      .speed-row label {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        color: var(--text3);
+        letter-spacing: 1px;
+        flex-shrink: 0;
+      }
+      input[type="range"] {
+        flex: 1;
+        accent-color: var(--accent);
+        height: 2px;
+      }
+      .speed-val {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--accent);
+        width: 28px;
+        text-align: right;
+      }
+
+      /* Quick words */
+      .quick-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      .quick-btn {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        padding: 5px 9px;
+        background: var(--s2);
+        border: 1px solid var(--border2);
+        border-radius: 3px;
+        color: var(--text2);
+        cursor: pointer;
+        letter-spacing: 0.5px;
+        transition: all 0.12s;
+        text-transform: uppercase;
+      }
+      .quick-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(0, 229, 255, 0.05);
+      }
+
+      /* Library */
+      .library-scroll {
+        flex: 1;
+        overflow-y: auto;
+        padding: 12px 16px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
+        align-content: start;
+      }
+      .library-scroll::-webkit-scrollbar {
+        width: 4px;
+      }
+      .library-scroll::-webkit-scrollbar-track {
+        background: var(--s1);
+      }
+      .library-scroll::-webkit-scrollbar-thumb {
+        background: var(--border2);
+        border-radius: 2px;
+      }
+
+      .lib-btn {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        padding: 7px 4px;
+        background: var(--s2);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        color: var(--text3);
+        cursor: pointer;
+        text-align: center;
+        letter-spacing: 0.5px;
+        transition: all 0.12s;
+        text-transform: uppercase;
+      }
+      .lib-btn:hover {
+        background: var(--s3);
+        color: var(--text2);
+        border-color: var(--border2);
+      }
+      .lib-btn.active {
+        border-color: rgba(0, 229, 255, 0.4);
+        color: var(--accent);
+        background: rgba(0, 229, 255, 0.06);
+      }
+
+      /* Stats bar */
+      .stats-bar {
+        padding: 10px 16px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+      .stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .stat-val {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--accent);
+      }
+      .stat-label {
+        font-family: var(--font-mono);
+        font-size: 8px;
+        color: var(--text3);
+        letter-spacing: 1px;
+      }
+
+      /* Add word modal */
+      .modal-bg {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 100;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-bg.open {
+        display: flex;
+      }
+      .modal {
+        background: var(--s1);
+        border: 1px solid var(--border2);
+        border-radius: 6px;
+        padding: 20px;
+        width: 360px;
+        font-family: var(--font-mono);
+      }
+      .modal h3 {
+        font-size: 12px;
+        letter-spacing: 2px;
+        color: var(--accent);
+        margin-bottom: 12px;
+      }
+      .modal input {
+        width: 100%;
+        background: var(--s2);
+        border: 1px solid var(--border2);
+        border-radius: 3px;
+        padding: 8px 10px;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        outline: none;
+        margin-bottom: 8px;
+      }
+      .modal-note {
+        font-size: 10px;
+        color: var(--text2);
+        line-height: 1.6;
+        margin-bottom: 12px;
+      }
+      .modal-btns {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .modal-btns .btn {
+        font-size: 9px;
+        padding: 6px 12px;
+      }
+    </style>
+    <style>
+      /* Extension overlay mode: show only hand gesture viewport */
+      body {
+        background: transparent !important;
+      }
+
+      .header,
+      .panel,
+      .hud,
+      .corner,
+      .modal-bg {
+        display: none !important;
+      }
+
+      .main {
+        width: 100vw;
+        height: 100vh;
+      }
+
+      .canvas-wrap {
+        width: 100%;
+        height: 100%;
+        background: transparent !important;
+      }
+
+      .canvas-wrap::before {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <span class="header-logo">ASL//SYS</span>
+      <span class="header-title">Sign Language Animation Engine</span>
+      <div class="header-dot"></div>
+      <span class="header-sub">ENGLISH → ASL → 3D</span>
+    </div>
+
+    <div class="main">
+      <!-- 3D Viewport -->
+      <div class="canvas-wrap">
+        <canvas id="canvas"></canvas>
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <!-- Top-left HUD -->
+        <div class="hud hud-tl">
+          <div class="hud-label">CURRENT SIGN</div>
+          <div class="current-sign-display" id="currentSign">—</div>
+          <div style="margin-top: 6px">
+            <span class="sign-type-badge" id="signType">IDLE</span>
+          </div>
+        </div>
+
+        <!-- Top-right HUD -->
+        <div class="hud hud-tr">
+          <div class="hud-label" style="justify-content: flex-end">FRAME</div>
+          <div class="hud-value" id="frameInfo">0.000s</div>
+          <div
+            class="hud-label"
+            style="margin-top: 8px; justify-content: flex-end"
+          >
+            JOINT COUNT
+          </div>
+          <div class="hud-value">32</div>
+        </div>
+
+        <!-- Bottom HUD -->
+        <div class="hud hud-bc">
+          <div class="progress-track" style="width: 300px">
+            <div
+              class="progress-fill"
+              id="progressFill"
+              style="width: 0%"
+            ></div>
+          </div>
+          <div
+            style="
+              margin-top: 5px;
+              font-family: var(--font-mono);
+              font-size: 9px;
+              color: var(--text3);
+            "
+            id="queueInfo"
+          >
+            QUEUE EMPTY
+          </div>
+        </div>
+      </div>
+
+      <!-- Control Panel -->
+      <div class="panel">
+        <!-- Input -->
+        <div class="p-section">
+          <div class="p-label">ENGLISH INPUT</div>
+          <textarea
+            class="eng-input"
+            id="textInput"
+            placeholder="Type English text here...&#10;e.g. Hello my name is Alex"
+            rows="3"
+          ></textarea>
+          <div class="asl-output" id="aslOutput">
+            <span
+              style="
+                font-family: var(--font-mono);
+                font-size: 9px;
+                color: var(--text3);
+              "
+              >ASL GLOSS WILL APPEAR HERE</span
+            >
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-sign" id="signBtn">▶ SIGN IT</button>
+            <button class="btn btn-stop" id="stopBtn">■ STOP</button>
+            <button
+              class="btn btn-export"
+              id="exportBtn"
+              title="Export Animation JSON"
+            >
+              ↓ JSON
+            </button>
+          </div>
+          <div class="speed-row">
+            <label>SPEED</label>
+            <input
+              type="range"
+              id="speedSlider"
+              min="0.3"
+              max="2.5"
+              step="0.1"
+              value="1.0"
+            />
+            <span class="speed-val" id="speedVal">1.0×</span>
+          </div>
+        </div>
+
+        <!-- Quick Signs -->
+        <div class="p-section">
+          <div class="p-label">QUICK SIGNS</div>
+          <div class="quick-grid" id="quickGrid"></div>
+        </div>
+
+        <!-- Library -->
+        <div
+          class="p-section"
+          style="
+            padding-bottom: 8px;
+            border-bottom: none;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+          "
+        >
+          <div class="p-label" style="flex-shrink: 0">
+            SIGN LIBRARY
+            <button
+              class="btn btn-export"
+              id="addWordBtn"
+              style="
+                pointer-events: all;
+                margin-left: auto;
+                font-size: 8px;
+                padding: 3px 8px;
+              "
+            >
+              + ADD
+            </button>
+          </div>
+          <div class="library-scroll" id="libraryGrid"></div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-bar">
+          <div class="stat">
+            <span class="stat-val" id="statSigns">0</span>
+            <span class="stat-label">SIGNS</span>
+          </div>
+          <div class="stat">
+            <span class="stat-val">26</span>
+            <span class="stat-label">A–Z</span>
+          </div>
+          <div class="stat">
+            <span class="stat-val" id="statQueue">0</span>
+            <span class="stat-label">QUEUED</span>
+          </div>
+          <div class="stat" style="margin-left: auto">
+            <span class="stat-val" style="color: var(--accent2)">GLB</span>
+            <span class="stat-label">EXPORT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Word Modal -->
+    <div class="modal-bg" id="addModal">
+      <div class="modal">
+        <h3>ADD NEW SIGN TO LIBRARY</h3>
+        <div class="modal-note">
+          Enter the English word and the ASL handshape to use. The system will
+          use the handshape with a standard hold duration. Use letters A–Z for
+          the shape, or a known word sign.
+        </div>
+        <input
+          type="text"
+          id="newWord"
+          placeholder="English word (e.g. FRIEND)"
+        />
+        <input
+          type="text"
+          id="newShape"
+          placeholder="Handshape (e.g. F, HELLO, YES)"
+        />
+        <input type="text" id="newNote" placeholder="Note (optional)" />
+        <div class="modal-btns">
+          <button class="btn btn-stop" id="cancelModal">CANCEL</button>
+          <button class="btn btn-sign" id="confirmModal">ADD SIGN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Three.js (bundled locally for extension CSP compatibility) -->
+    <script src="./vendor/three.min.js"></script>
+    <script src="./asl_bridge.js"></script>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
