@@ -49,6 +49,20 @@
     }
   }
 
+  function setSpeed(speed) {
+    const slider = el("speedSlider");
+    const speedVal = el("speedVal");
+    if (!slider) return;
+
+    const min = Number(slider.min || 0.3);
+    const max = Number(slider.max || 2.5);
+    const normalized = Math.max(min, Math.min(max, Number(speed || 1)));
+
+    slider.value = String(normalized);
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+    if (speedVal) speedVal.textContent = `${normalized.toFixed(1)}x`;
+  }
+
   window.addEventListener("message", (evt) => {
     const msg = evt.data;
     if (!msg || typeof msg !== "object") return;
@@ -71,6 +85,11 @@
 
     if (msg.action === "resume") {
       resumeSign();
+      return;
+    }
+
+    if (msg.action === "setSpeed") {
+      setSpeed(msg.speed);
     }
   });
 })();

@@ -10,7 +10,6 @@
   z-index: 2147483647;
   background: transparent;
   box-shadow: none;
-  resize: none;
   pointer-events: auto;
   cursor: move;
 }
@@ -22,4 +21,15 @@
   border: 0;
   background: transparent;
   pointer-events: none;
+}
+
+#asl-overlay-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  pointer-events: auto;
+  background: transparent;
 }

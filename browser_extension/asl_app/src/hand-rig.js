@@ -5,29 +5,38 @@ export class HandRig {
     this.isRight = isRight;
     this.sign = isRight ? 1 : -1;
 
-    const handColor = 0x8bc8ff;
-    const jointColor = 0x55aaff;
-    const emissive = 0x001133;
+    const baseSkin = isRight ? 0xd6a98e : 0xd2a388;
+    const jointSkin = isRight ? 0xd1a186 : 0xcc9b7f;
+    const nailColor = isRight ? 0xe6c9ba : 0xe1c2b1;
 
-    this.mat = new THREE.MeshPhongMaterial({
-      color: handColor,
-      emissive,
-      emissiveIntensity: 0.4,
-      shininess: 80,
-      specular: 0x3399ff,
-      transparent: true,
-      opacity: 0.92,
+    const skinMaps = this._createSkinMaps(baseSkin);
+
+    this.mat = new THREE.MeshStandardMaterial({
+      color: baseSkin,
+      map: skinMaps.color,
+      roughnessMap: skinMaps.roughness,
+      roughness: 0.9,
+      metalness: 0.0,
       side: THREE.FrontSide,
     });
 
-    this.jointMat = new THREE.MeshPhongMaterial({
-      color: jointColor,
-      emissive: 0x001a44,
-      emissiveIntensity: 0.5,
-      shininess: 100,
-      specular: 0x66bbff,
-      transparent: true,
-      opacity: 0.95,
+    this.jointMat = new THREE.MeshStandardMaterial({
+      color: jointSkin,
+      map: skinMaps.color,
+      roughnessMap: skinMaps.roughness,
+      roughness: 0.88,
+      metalness: 0.0,
+      side: THREE.FrontSide,
+    });
+
+    this.nailMat = new THREE.MeshPhysicalMaterial({
+      color: nailColor,
+      roughness: 0.64,
+      metalness: 0.0,
+      clearcoat: 0.12,
+      clearcoatRoughness: 0.62,
+      reflectivity: 0.12,
+      side: THREE.FrontSide,
     });
 
     this.root = new THREE.Group();
@@ -44,23 +53,99 @@ export class HandRig {
     this.root.position.set(isRight ? 1.25 : -1.25, 0, 0.6);
   }
 
+  _createSkinMaps(baseHex) {
+    const size = 256;
+    const colorCanvas = document.createElement("canvas");
+    colorCanvas.width = size;
+    colorCanvas.height = size;
+    const cctx = colorCanvas.getContext("2d");
+
+    const base = new THREE.Color(baseHex);
+    const light = base.clone().offsetHSL(0, 0.02, 0.07);
+    const dark = base.clone().offsetHSL(0, -0.01, -0.08);
+
+    const grad = cctx.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, `#${light.getHexString()}`);
+    grad.addColorStop(1, `#${dark.getHexString()}`);
+    cctx.fillStyle = grad;
+    cctx.fillRect(0, 0, size, size);
+
+    // Subtle pore-like noise to avoid plastic flatness.
+    for (let i = 0; i < 18000; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const r = Math.random() * 1.2 + 0.2;
+      const alpha = Math.random() * 0.05;
+      cctx.fillStyle = `rgba(120,85,70,${alpha.toFixed(3)})`;
+      cctx.beginPath();
+      cctx.arc(x, y, r, 0, Math.PI * 2);
+      cctx.fill();
+    }
+
+    for (let i = 0; i < 2300; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const w = Math.random() * 9 + 2;
+      const h = Math.random() * 0.45 + 0.12;
+      cctx.fillStyle = `rgba(95,65,50,${(Math.random() * 0.045).toFixed(3)})`;
+      cctx.fillRect(x, y, w, h);
+    }
+
+    const roughCanvas = document.createElement("canvas");
+    roughCanvas.width = size;
+    roughCanvas.height = size;
+    const rctx = roughCanvas.getContext("2d");
+    rctx.fillStyle = "rgb(210,210,210)";
+    rctx.fillRect(0, 0, size, size);
+
+    for (let i = 0; i < 14000; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const shade = 160 + Math.floor(Math.random() * 70);
+      rctx.fillStyle = `rgb(${shade},${shade},${shade})`;
+      rctx.fillRect(x, y, 1, 1);
+    }
+
+    const colorMap = new THREE.CanvasTexture(colorCanvas);
+    colorMap.wrapS = THREE.RepeatWrapping;
+    colorMap.wrapT = THREE.RepeatWrapping;
+    colorMap.repeat.set(2.2, 2.2);
+
+    const roughMap = new THREE.CanvasTexture(roughCanvas);
+    roughMap.wrapS = THREE.RepeatWrapping;
+    roughMap.wrapT = THREE.RepeatWrapping;
+    roughMap.repeat.set(2.2, 2.2);
+
+    return { color: colorMap, roughness: roughMap };
+  }
+
   _makeBone(name, length, radius = 0.055) {
     const g = new THREE.Group();
     g.name = name;
 
     const sphere = new THREE.Mesh(
-      new THREE.SphereGeometry(radius * 1.35, 10, 8),
-      this.jointMat,
+      new THREE.SphereGeometry(radius * 1.06, 18, 14),
+      this.mat,
     );
+    sphere.scale.set(1.02, 0.9, 0.98);
     g.add(sphere);
 
     if (length > 0) {
       const bone = new THREE.Mesh(
-        new THREE.CylinderGeometry(radius * 0.78, radius, length, 7),
+        new THREE.CylinderGeometry(radius * 0.9, radius * 0.96, length, 18, 1),
         this.mat,
       );
       bone.position.y = length / 2;
+      bone.scale.set(1.02, 1, 0.9);
       g.add(bone);
+
+      const tipCap = new THREE.Mesh(
+        new THREE.SphereGeometry(radius * 1.03, 14, 12),
+        this.mat,
+      );
+      tipCap.position.y = length;
+      tipCap.scale.set(0.98, 0.78, 1.08);
+      g.add(tipCap);
     }
 
     return { group: g, length };
@@ -69,22 +154,39 @@ export class HandRig {
   _buildPalm() {
     // Vertical rectangle plate under the four fingers
     const palmPlate = new THREE.Mesh(
-      new THREE.BoxGeometry(0.68, 0.86, 0.1),
+      new THREE.BoxGeometry(0.72, 0.92, 0.17, 4, 4, 2),
       this.mat,
     );
     palmPlate.position.set(0, 0.45, -0.12);
+    palmPlate.scale.set(1, 1, 0.86);
     this.wrist.add(palmPlate);
+
+    const palmPad = new THREE.Mesh(
+      new THREE.SphereGeometry(0.26, 18, 14),
+      this.jointMat,
+    );
+    palmPad.scale.set(1.35, 0.55, 0.65);
+    palmPad.position.set(0, 0.2, -0.04);
+    this.wrist.add(palmPad);
+
+    const thenarPad = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 16, 12),
+      this.jointMat,
+    );
+    thenarPad.scale.set(1.05, 0.7, 0.82);
+    thenarPad.position.set(-0.22 * this.sign, 0.28, 0.04);
+    this.wrist.add(thenarPad);
 
     // Small top ridge near finger roots for smoother transition
     const knuckleBar = new THREE.Mesh(
-      new THREE.BoxGeometry(0.62, 0.08, 0.18),
+      new THREE.BoxGeometry(0.64, 0.1, 0.18, 2, 1, 1),
       this.jointMat,
     );
     knuckleBar.position.set(0, 0.87, -0.02);
     this.wrist.add(knuckleBar);
 
     const wristKnob = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.07, 0.08, 0.15, 8),
+      new THREE.CylinderGeometry(0.075, 0.09, 0.17, 14),
       this.jointMat,
     );
     wristKnob.position.set(0, -0.05, 0);
@@ -117,6 +219,14 @@ export class HandRig {
       this.thumbSegs.push(group);
     });
 
+    const thumbNail = new THREE.Mesh(
+      new THREE.SphereGeometry(0.036, 14, 10),
+      this.nailMat,
+    );
+    thumbNail.position.set(0, thumbLens[2] * 0.9, 0.03);
+    thumbNail.scale.set(1.2, 0.28, 0.88);
+    this.thumbSegs[2].add(thumbNail);
+
     const fingerDefs = [
       ["index", -0.21 * s, [0.3, 0.22, 0.15]],
       ["middle", -0.07 * s, [0.34, 0.24, 0.16]],
@@ -144,6 +254,14 @@ export class HandRig {
         parent = group;
         this.fingerSegs[name].push(group);
       });
+
+      const nail = new THREE.Mesh(
+        new THREE.SphereGeometry(0.03, 14, 10),
+        this.nailMat,
+      );
+      nail.position.set(0, lens[2] * 0.9, 0.028);
+      nail.scale.set(1.06, 0.26, 0.82);
+      this.fingerSegs[name][2].add(nail);
     });
   }
 

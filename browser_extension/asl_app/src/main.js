@@ -27,29 +27,36 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setClearColor(0x000000, 0);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.02;
+renderer.physicallyCorrectLights = true;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(42, 1, 0.01, 100);
 camera.position.set(0, 0.5, 6.5);
 camera.lookAt(0, 0.3, 0);
 
-const ambient = new THREE.AmbientLight(0x1a1a33, 1.2);
+const ambient = new THREE.AmbientLight(0xfff7ef, 0.48);
 scene.add(ambient);
 
-const key = new THREE.DirectionalLight(0x6699ff, 2.5);
-key.position.set(0, 3, 4);
+const hemi = new THREE.HemisphereLight(0xfffaf2, 0xc4cfdf, 0.42);
+scene.add(hemi);
+
+const key = new THREE.DirectionalLight(0xfff0e2, 2.5);
+key.position.set(1.2, 2.8, 3.8);
 scene.add(key);
 
-const fillR = new THREE.PointLight(0x00ffff, 1.8, 12);
-fillR.position.set(2, 1, 3);
+const fillR = new THREE.PointLight(0xf2d5be, 0.8, 8);
+fillR.position.set(2.0, 1.2, 1.9);
 scene.add(fillR);
 
-const fillL = new THREE.PointLight(0x4444ff, 1.2, 12);
-fillL.position.set(-2, 1, 3);
+const fillL = new THREE.PointLight(0xcfdcff, 0.58, 8);
+fillL.position.set(-1.9, 1.1, 2.1);
 scene.add(fillL);
 
-const rimLight = new THREE.DirectionalLight(0x003366, 1.0);
-rimLight.position.set(0, -2, -3);
+const rimLight = new THREE.DirectionalLight(0xfffaf4, 0.68);
+rimLight.position.set(-0.55, 0.9, -2.8);
 scene.add(rimLight);
 
 const rightHand = new HandRig(scene, true);
@@ -83,8 +90,8 @@ function animate() {
   camera.position.y = 0.5 + Math.sin(camSwayT) * 0.03;
   camera.lookAt(0, 0.3, 0);
 
-  fillR.intensity = 1.6 + Math.sin(now * 0.002) * 0.3;
-  fillL.intensity = 1.0 + Math.sin(now * 0.0015 + 1) * 0.2;
+  fillR.intensity = 0.78 + Math.sin(now * 0.0012) * 0.05;
+  fillL.intensity = 0.56 + Math.sin(now * 0.001 + 1) * 0.04;
 
   player.update(dt);
 

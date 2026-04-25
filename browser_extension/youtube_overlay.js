@@ -6,6 +6,7 @@
 
   let root;
   let frame;
+  let resizeHandle;
   let activeVideo;
   let lastCaption = "";
 
@@ -47,6 +48,12 @@
     postToASL("resume");
   }
 
+  function onVideoRateChanged() {
+    if (!activeVideo) return;
+    const speed = Number(activeVideo.playbackRate || 1);
+    postToASL("setSpeed", { speed });
+  }
+
   function bindVideo(videoEl) {
     if (!videoEl || videoEl === activeVideo) return;
 
@@ -54,13 +61,16 @@
       activeVideo.removeEventListener("pause", onVideoStateChanged);
       activeVideo.removeEventListener("play", onVideoStateChanged);
       activeVideo.removeEventListener("ended", onVideoStateChanged);
+      activeVideo.removeEventListener("ratechange", onVideoRateChanged);
     }
 
     activeVideo = videoEl;
     activeVideo.addEventListener("pause", onVideoStateChanged);
     activeVideo.addEventListener("play", onVideoStateChanged);
     activeVideo.addEventListener("ended", onVideoStateChanged);
+    activeVideo.addEventListener("ratechange", onVideoRateChanged);
     onVideoStateChanged();
+    onVideoRateChanged();
   }
 
   function makeDraggable(panel) {
@@ -77,6 +87,7 @@
     };
 
     panel.addEventListener("mousedown", (e) => {
+      if (e.target === resizeHandle) return;
       dragging = true;
       const rect = panel.getBoundingClientRect();
       dx = e.clientX - rect.left;
@@ -86,6 +97,44 @@
         "mouseup",
         () => {
           dragging = false;
+          document.removeEventListener("mousemove", onMove);
+        },
+        { once: true },
+      );
+    });
+  }
+
+  function makeResizable(panel, handle) {
+    let resizing = false;
+    let startX = 0;
+    let startY = 0;
+    let startW = 0;
+    let startH = 0;
+    const minW = 220;
+    const minH = 140;
+
+    const onMove = (e) => {
+      if (!resizing) return;
+      const nextW = Math.max(minW, startW + (e.clientX - startX));
+      const nextH = Math.max(minH, startH + (e.clientY - startY));
+      panel.style.width = `${nextW}px`;
+      panel.style.height = `${nextH}px`;
+    };
+
+    handle.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      resizing = true;
+      const rect = panel.getBoundingClientRect();
+      startX = e.clientX;
+      startY = e.clientY;
+      startW = rect.width;
+      startH = rect.height;
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener(
+        "mouseup",
+        () => {
+          resizing = false;
           document.removeEventListener("mousemove", onMove);
         },
         { once: true },
@@ -105,12 +154,18 @@
     frame.referrerPolicy = "no-referrer";
     frame.addEventListener("load", () => {
       onVideoStateChanged();
+      onVideoRateChanged();
       syncCaptionToASL();
     });
 
+    resizeHandle = document.createElement("div");
+    resizeHandle.id = "asl-overlay-resize-handle";
+
     root.appendChild(frame);
+    root.appendChild(resizeHandle);
     document.documentElement.appendChild(root);
     makeDraggable(root);
+    makeResizable(root, resizeHandle);
   }
 
   function startWatchers() {
