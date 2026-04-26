@@ -2,9 +2,8 @@
   "manifest_version": 3,
   "name": "YouTube ASL Overlay Sync",
   "description": "Displays an ASL overlay above YouTube and syncs ASL playback with video pause/play.",
-  "version": "0.1.1",
-  "permissions": ["storage"],
-  "host_permissions": ["https://www.youtube.com/*"],
+  "version": "0.2.7",
+  "host_permissions": ["https://www.youtube.com/*", "http://127.0.0.1:8000/*"],
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
@@ -15,11 +14,12 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["asl_app/*", "asl_app/src/*", "asl_app/src/data/*"],
+      "resources": ["asl_app/*", "asl_app/vendor/*", "asl_app/src/*", "asl_app/src/data/*", "audio-worklet-processor.js"],
       "matches": ["https://www.youtube.com/*"]
     }
   ],
   "action": {
     "default_title": "YouTube ASL Overlay Sync"
-  }
+  },
+  "options_page": "options.html"
 }

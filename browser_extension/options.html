@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>YouTube ASL Overlay — Options</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+      }
+      h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      .section {
+        margin-bottom: 30px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      button {
+        background: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      .status {
+        margin-top: 10px;
+        font-size: 14px;
+      }
+      .status.success {
+        color: #4CAF50;
+      }
+      .status.error {
+        color: #f44336;
+      }
+      .help-text {
+        font-size: 12px;
+        color: #666;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>YouTube ASL Overlay Sync</h1>
+
+    <div class="section">
+      <h3>Local transcription is built in</h3>
+      <p class="help-text">
+        This version transcribes YouTube audio through the local Python backend at
+        <code>http://127.0.0.1:8000</code>. No API key is required.
+      </p>
+      <p class="help-text">
+        Start the backend with <code>python main.py</code>, then reload the extension and play a YouTube video.
+      </p>
+    </div>
+
+    <div class="section">
+      <h3>What to expect</h3>
+      <ol>
+        <li>Captions still take priority when they exist.</li>
+        <li>When captions are missing, the overlay sends 2-second audio chunks to the local backend.</li>
+        <li>The backend uses Vosk to transcribe audio without any external API key.</li>
+      </ol>
+    </div>
+  </body>
+</html>

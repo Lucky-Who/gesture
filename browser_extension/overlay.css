@@ -23,13 +23,74 @@
   pointer-events: none;
 }
 
-#asl-overlay-resize-handle {
+.asl-resize-handle {
   position: absolute;
-  right: 0;
-  bottom: 0;
-  width: 18px;
-  height: 18px;
-  cursor: nwse-resize;
   pointer-events: auto;
   background: transparent;
+}
+
+.asl-resize-n,
+.asl-resize-s {
+  left: 12px;
+  right: 12px;
+  height: 10px;
+}
+
+.asl-resize-w,
+.asl-resize-e {
+  top: 12px;
+  bottom: 12px;
+  width: 10px;
+}
+
+.asl-resize-n {
+  top: 0;
+  cursor: ns-resize;
+}
+
+.asl-resize-s {
+  bottom: 0;
+  cursor: ns-resize;
+}
+
+.asl-resize-w {
+  left: 0;
+  cursor: ew-resize;
+}
+
+.asl-resize-e {
+  right: 0;
+  cursor: ew-resize;
+}
+
+.asl-resize-ne,
+.asl-resize-nw,
+.asl-resize-se,
+.asl-resize-sw {
+  width: 14px;
+  height: 14px;
+}
+
+.asl-resize-ne {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+
+.asl-resize-nw {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+
+.asl-resize-se {
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+}
+
+.asl-resize-sw {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
 }
